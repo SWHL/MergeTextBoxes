@@ -22,13 +22,13 @@ class BoxesConnector:
         self.overlap_threshold = overlap_threshold  # y轴方向上最大重合度
         self.graph = np.zeros((self.rects.shape[0], self.rects.shape[0]))
 
-        self.r_index = [[] for _ in range(imageW)]  # 构建imageW个空列表
-        for index, rect in enumerate(
-            rects
-        ):  # r_index第rect[0]个元素表示 第index个(数量可以是0/1/大于1)rect的x轴起始坐标等于rect[0]
+        # 构建imageW个空列表？ TODO: 这里有必要构建imageW个吗？
+        self.r_index = [[] for _ in range(imageW)]
+        for index, rect in enumerate(rects):
             if int(rect[0]) < imageW:
                 self.r_index[int(rect[0])].append(index)
-            else:  # 边缘的框旋转后可能坐标越界
+            else:
+                # 边缘的框旋转后可能坐标越界
                 self.r_index[imageW - 1].append(index)
         print(self.r_index)
 
@@ -36,55 +36,46 @@ class BoxesConnector:
         """计算两个框在Y轴方向的重合度(Y轴错位程度)"""
         height1 = self.rects[index1][3] - self.rects[index1][1]
         height2 = self.rects[index2][3] - self.rects[index2][1]
+
+        # 两个框的Y轴重叠程度
         y0 = max(self.rects[index1][1], self.rects[index2][1])
         y1 = min(self.rects[index1][3], self.rects[index2][3])
-        print("y1", y1)
-        Yaxis_overlap = max(0, y1 - y0) / max(height1, height2)
 
-        print("Yaxis_overlap", Yaxis_overlap)
+        Yaxis_overlap = max(0, y1 - y0) / max(height1, height2)
         return Yaxis_overlap
 
     def get_proposal(self, index):
         rect = self.rects[index]
-        print("rect", rect)
 
+        # 只计算到 rect[2] + self.max_dist范围内的框
         for left in range(rect[0] + 1, min(self.imageW - 1, rect[2] + self.max_dist)):
             for idx in self.r_index[left]:
-                print("58796402", idx)
-                # index: 第index个rect(被比较rect)
-                # idx: 第idx个rect的x轴起始坐标大于被比较rect的x轴起始坐标(+max_dist)且小于被比较rect的x轴终点坐标(+max_dist)
                 if self.calc_overlap_for_Yaxis(index, idx) > self.overlap_threshold:
                     return idx
         return -1
 
     def sub_graphs_connected(self):
-        sub_graphs = []  # 相当于一个堆栈
+        sub_graphs = []
         for index in range(self.graph.shape[0]):
             # 第index列全为0且第index行存在非0
+            # 第index个框列全为0：说明该框属于某一行的开头那个
             if (
                 not self.graph[:, index].any() and self.graph[index, :].any()
             ):  # 优先级是not > and > or
                 v = index
-                print("v", v)
                 sub_graphs.append([v])
-                print("sub_graphs", sub_graphs)
+
                 # 级联多个框(大于等于2个)
-                print("self.graph[v, :]", self.graph[v, :])
                 while self.graph[v, :].any():
                     v = np.where(self.graph[v, :])[0][0]
-                    print("v11", v)
                     sub_graphs[-1].append(v)
-                    print("sub_graphs11", sub_graphs)
         return sub_graphs
 
     def connect_boxes(self):
         for idx, _ in enumerate(self.rects):
-            # 计算当前框与其余框的Y轴重叠，是否超过阈值？
             proposal = self.get_proposal(idx)
-            print("idx11", idx)
-            print("proposal", proposal)
             if proposal >= 0:
-                self.graph[idx][proposal] = 1  # 第idx和proposal个框需要合并则置1
+                self.graph[idx][proposal] = 1
 
         sub_graphs = self.sub_graphs_connected()  # sub_graphs [[0, 1], [3, 4, 5]]
 
