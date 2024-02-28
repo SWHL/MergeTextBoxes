@@ -62,9 +62,11 @@ cv2.imwrite("res.png", show_image)
 
 ### Visualization
 Before merging：
+
 ![alt text](./docs/origin.png)
 
 After merging：
+
 ![alt text](./docs/res.png)
 
 
