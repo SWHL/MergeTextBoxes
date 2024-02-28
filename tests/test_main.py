@@ -9,7 +9,7 @@ root_dir = cur_dir.parent
 
 sys.path.append(str(root_dir))
 
-from merge_text_boxes import BoxesConnector
+from merge_text_boxes import MergeTextBoxes
 
 test_file_dir = cur_dir / "test_files"
 
@@ -27,9 +27,9 @@ rects = [
     [264, 52, 343, 81],
 ]
 
-connector = BoxesConnector(max_dist=15, overlap_threshold=0.2)
+connector = MergeTextBoxes(max_dist=15, overlap_threshold=0.2)
 
 
 def test_normal():
     new_rects = connector(rects, 500)
-    assert new_rects.shape == (8, 4)
+    assert new_rects.shape == (3, 4)

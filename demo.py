@@ -1,10 +1,12 @@
 # -*- encoding: utf-8 -*-
 # @Author: SWHL
 # @Contact: liekkaskono@163.com
+import copy
+
 import cv2
 import numpy as np
 
-from merge_text_boxes import BoxesConnector
+from merge_text_boxes import MergeTextBoxes
 
 rects = [
     [144, 5, 192, 25],
@@ -21,15 +23,16 @@ rects = [
 ]
 
 # 创建一个白纸
-show_image = np.zeros([500, 500, 3], np.uint8) + 255
+show_image = np.zeros([100, 500, 3], np.uint8) + 255
 
-connector = BoxesConnector(rects, 500, max_dist=15, overlap_threshold=0.2)
-new_rects = connector.connect_boxes()
+connector = MergeTextBoxes(max_dist=15, overlap_threshold=0.2)
+new_rects = connector(rects, 500)
 print(new_rects)
 
+tmp_img = copy.deepcopy(show_image)
 for rect in rects:
-    cv2.rectangle(show_image, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 1)
-cv2.imwrite("origin.png", show_image)
+    cv2.rectangle(tmp_img, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 1)
+cv2.imwrite("origin.png", tmp_img)
 
 for rect in new_rects:
     cv2.rectangle(show_image, (rect[0], rect[1]), (rect[2], rect[3]), (255, 0, 0), 1)
